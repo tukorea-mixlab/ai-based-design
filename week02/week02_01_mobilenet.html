@@ -1,0 +1,33 @@
+<!-- 인공지능활용디자인 2주차 - MobileNet 예시 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tfjs-MobileNet 예시</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@1.0.0"> </script>
+</head>
+<body>
+    <img id="img" src="cat.jpg"></img>
+</body>
+
+<script>
+// Notice there is no 'import' statement. 'mobilenet' and 'tf' is
+// available on the index-page because of the script tag above.
+
+const img = document.getElementById('img');
+
+// Load the model.
+mobilenet.load().then(model => {
+    // Classify the image.
+    model.classify(img).then(predictions => {
+        console.log('Predictions: ');
+        console.log(predictions);
+    });
+});
+</script>
+
+</html>
+

@@ -1,0 +1,91 @@
+<!-- 인공지능활용디자인 3주차 - 사인 곡선 피팅 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다항 회귀 최적화 - 사인 곡선 피팅</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+    <!-- 데이터를 표시할 캔버스 -->
+    <canvas id="data"></canvas>
+
+    <!-- 손실 함수를 표시할 캔버스 -->
+    <canvas id="loss"></canvas>
+</body>
+
+<script>
+
+// xs: -PI~PI, 0.01 간격, noise: 0.05의 랜덤값, ys: sin값에 노이즈를 추가한 값
+const xs    = tf.mul(2 * Math.PI, tf.range(-0.5, 0.5, 0.01));
+const noise = tf.mul(tf.randomNormal([xs.size]), 0.05);
+const ys    = tf.sin(xs).add(noise);
+
+// 2차 함수 가중치, variable()로 선언하여야 최적화 이후 자동으로 변경됨
+const w0 = tf.scalar(Math.random() - 0.5).variable();
+const w1 = tf.scalar(Math.random() - 0.5).variable();
+const w2 = tf.scalar(Math.random() - 0.5).variable();
+
+// 다항 회귀 함수(2차): w2 * x^2 + w1 * x + w0
+const f_x = (x) => {
+    return w2.mul(x).mul(x).add(w1.mul(x)).add(w0);
+}
+
+// 손실함수: 예측값과 실제값의 차이의 제곱 평균
+const loss = (predict, real) => {
+    return predict.sub(real).square().mean();
+}
+
+// 알파(학습률): 0.3, adam 옵티마이저 사용
+const alpha = 0.3;
+const optimizer = tf.train.adam(alpha);
+
+// iter: 반복 횟수, losses: 손실값
+let iter = [];
+let losses = [];
+
+// 100회 반복하며 손실값 기록
+for(let i=0; i<100; i++){
+    const l = optimizer.minimize(()=>loss(f_x(xs), ys), true);
+    iter.push(i);
+    losses.push(l.dataSync()[0]);
+}
+
+// 차트
+const ctxData = document.getElementById('data');
+new Chart(ctxData, {
+    type: 'scatter',
+    data: {
+        labels: xs.dataSync(),
+        datasets: [{
+            label: '노이즈를 포함하는 사인 곡선',
+            data: ys.dataSync(),
+        },
+        {
+            label: '피팅 라인',
+            data: f_x(xs).dataSync(),
+        }
+        ]
+    }
+});
+
+// 차트
+const ctxLoss = document.getElementById('loss');
+new Chart(ctxLoss, {
+    type: 'line',
+    data: {
+        labels: iter,
+        datasets: [{
+            label: '손실 함수',
+            data: losses,
+        }]
+    }
+});
+
+</script>
+</html>
+

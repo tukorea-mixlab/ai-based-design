@@ -1,0 +1,55 @@
+<!-- 인공지능활용디자인 2주차 - Magenta.js 예시 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magenta.js/Sketch 예시</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@magenta/sketch"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.js"></script>
+</head>
+<body>
+</body>
+
+<script>
+let x, y;                               // 펜이 그릴 좌표
+let dx, dy, penDown, penUp, penEnd;     // 예측 결과값 (변화량 및 펜 입력)
+let modelState;                         // 모델 상태
+let modelLoaded = false;                // 모델 로딩 여부
+let isDrawing = 0;                      // 그리기 여부 (penDown일 경우)
+
+const model = new ms.SketchRNN('https://storage.googleapis.com/quickdraw-models/sketchRNN/large_models/cat.gen.json');
+
+function setup(){
+    createCanvas(400, 400);
+    x = width/2;
+    y = height/2;
+
+    model.initialize().then(function() {
+        modelLoaded = true;                                     // 모델 로딩을 활성화
+        model.setPixelFactor(3.0);                              // 스케일 설정
+        [dx, dy, penDown, penUp, penEnd] = model.zeroInput();   // 초기 입력 설정
+        modelState = model.zeroState();                         // 초기 상태 설정
+    });
+}
+
+function draw(){
+    if(modelLoaded == true){
+        modelState = model.update([dx, dy, penDown, penUp, penEnd], modelState);    // 현재와 이전 위치를 받아 업데이트
+        let pdf = model.getPDF(modelState, 0.45);                                   // 확률분포함수 생성 (0.45: 불확실성)
+        [dx, dy, penDown, penUp, penEnd] = model.sample(pdf);                       // 값들을 새로운 확률값으로 지정
+
+        if(isDrawing == 1){
+            line(x, y, x+dx, y+dy);                                                 // 이전 좌표의 펜이 눌렀을 때에만 라인 생성
+        }
+        
+        x+=dx;                                                                      // x의 변화량 더하기
+        y+=dy;                                                                      // y의 변화량 더하기
+        isDrawing = penDown;                                                        // 다음에 그릴지 여부 결정
+    }
+}
+
+</script>
+</html>
+
