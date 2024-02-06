@@ -1,0 +1,224 @@
+<!-- 인공지능활용디자인 4주차 - 나이와 BMI로 고혈압 여부 분류하기 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로지스틱 회귀 - 고혈압 분류 예시</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+    <!-- UI 영역 -->
+    <h1>나이, BMI로 고혈압 추정하기</h1>
+    <input id="inputAge" placeholder="나이"/>
+    <input id="inputBMI" placeholder="BMI"/>
+    <button id="calc">계산하기</button>
+    <p id="prediction"></p>
+
+    <!-- 데이터를 표시할 캔버스 -->
+    <canvas id="data"></canvas>
+
+    <!-- 분류 결과를 표시할 캔버스 -->
+    <canvas id="result"></canvas>
+
+    <!-- 손실 함수를 표시할 캔버스 -->
+    <canvas id="loss"></canvas>
+</body>
+
+<script>
+// =================================================================
+//                          데이터 생성 파트
+// =================================================================
+let c1, c2, l1, l2;
+let xs, ys, input;
+
+fetch('./data.json') // data.json의 내용 불러오기
+    .then((response) => {
+        return response.json()
+    })
+    .then((json) => {
+        let loadedC1 = [];
+        let loadedC2 = [];
+        let loadedL1 = [];
+        let loadedL2 = [];
+
+        for(let i in json){
+            if(json[i].DIS <= 2){
+                loadedC1.push( json[i].AGE )
+                loadedC1.push( json[i].BMI )
+                loadedL1.push(1)
+            }else{
+                loadedC2.push( json[i].AGE )
+                loadedC2.push( json[i].BMI )
+                loadedL2.push(0)
+            }
+        }
+
+        // 같은 사이즈로 바꿔주기 (갯수가 다르면 학습에 지장을 준다)
+        if(loadedC1.length > loadedC2.length){
+            loadedC1 = loadedC1.slice(0, loadedC2.length)
+            loadedL1 = loadedL1.slice(0, loadedL2.length)
+        }else{
+            loadedC2 = loadedC2.slice(0, loadedC1.length)
+            loadedL2 = loadedL2.slice(0, loadedL1.length)
+        }
+
+        c1 = tf.tensor2d(loadedC1, [loadedC1.length/2, 2]);
+        c2 = tf.tensor2d(loadedC2, [loadedC2.length/2, 2]);
+        l1 = tf.tensor2d(loadedL1, [loadedL1.length, 1]);
+        l2 = tf.tensor2d(loadedL2, [loadedL2.length, 1]);
+
+        xs = c1.concat(c2);
+        ys = l1.concat(l2);
+
+        training(); // 최적화 실행
+    })
+
+// =================================================================
+//                      Layers API - 모델 설정
+// =================================================================
+const model = tf.sequential();
+
+model.add( tf.layers.dense({units: 1, batchInputShape: [null, 2]}) ) // 2개 요소로 이루어진 입력 벡터
+
+
+// =================================================================
+//                          최적화 파트
+// =================================================================
+// 손실 함수 (그대로 사용)
+const loss = (predict, real) => {
+    return tf.losses.sigmoidCrossEntropy(predict, real).asScalar();
+}
+
+// 모델 최적화 정의 (compile)
+model.compile({
+    loss: loss,
+    optimizer: 'adam',
+    metrics: ['accuracy']
+});
+
+// 학습: 비동기식 함수 (맨 마지막에 실행)
+let history;
+async function training(){
+    console.log('학습 시작!');
+    history = await model.fit(xs, ys, {epochs: 100}); // epochs: 학습 반복 횟수
+    console.log('학습 완료!');
+    console.log(model.summary());
+
+    console.log('정확도: ' + history.history.acc[history.history.acc.length-1]);
+
+    drawGraphs();
+}
+
+// =================================================================
+//                          차트 그리는 파트
+// =================================================================
+
+// 데이터 처리를 위한 함수
+function getXYfromTensor2D(t){
+    let array = t.dataSync();
+    let returnArray = [];
+    for(let i=0; i<array.length; i+=2){
+        returnArray.push({x: array[i], y: array[i+1]}) // 짝수: x값, 홀수: y값
+    }
+    return returnArray;
+} 
+
+function classify(t){
+    let array = t.dataSync();
+    let returnC1 = [];
+    let returnC2 = [];
+
+    for(let i=0; i<array.length; i+=2){
+        let c = model.predict(t).dataSync()[i/2] // 모델의 계산은 model.predict(tensor)
+
+        if(c>=0.5){
+            returnC1.push({x: array[i], y: array[i+1]});
+        }else{
+            returnC2.push({x: array[i], y: array[i+1]});
+        }
+        
+    }
+
+    return {c1: returnC1, c2: returnC2};
+} 
+
+function drawGraphs(){
+    // 입력 데이터 차트
+    const ctxData = document.getElementById('data');
+    new Chart(ctxData, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Class 1',
+                data: getXYfromTensor2D(c1),
+            },
+            {
+                label: 'Class 2',
+                data: getXYfromTensor2D(c2),
+            }
+            ]
+        }
+    });
+
+    //분류 결과 차트
+    const ctxResult = document.getElementById('result');
+    new Chart(ctxResult, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Class 1',
+                data: classify(xs).c1,
+            },
+            {
+                label: 'Class 2',
+                data: classify(xs).c2,
+            }
+            ]
+        }
+    });
+
+    // 손실 함수 차트
+    const ctxLoss = document.getElementById('loss');
+    new Chart(ctxLoss, {
+        type: 'line',
+        data: {
+            labels: history.epoch,
+            datasets: [{
+                label: '손실 함수',
+                data: history.history.loss,
+            }]
+        }
+    });
+
+}
+
+// =================================================================
+//                          결과 추정 파트
+// =================================================================
+
+let inputBoxAge = document.getElementById('inputAge');
+let inputBoxBMI = document.getElementById('inputBMI');
+let calcButton = document.getElementById('calc');
+let prediction = document.getElementById('prediction');
+
+calcButton.addEventListener('click', ()=>{
+    let age = (inputBoxAge.value-21)/2;
+    let bmi = inputBoxBMI.value;
+    const input = tf.tensor2d([age, bmi], [1, 2]);
+
+    let p = model.predict(input).dataSync()[0];
+    if(p >= 0.5){
+        prediction.innerText = `나이 ${age}에 BMI ${bmi}의 경우 고혈압일 수 있습니다. (p=${p})`;
+    }else{
+        prediction.innerText = `나이 ${age}에 BMI ${bmi}의 경우 정상일 수 있습니다. (p=${p})`;
+    }
+});
+
+
+</script>
+</html>
+

@@ -1,0 +1,159 @@
+<!-- 인공지능활용디자인 4주차 - 로지스틱 회귀 - Core API -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로지스틱 회귀 - Core API</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+    <!-- 데이터를 표시할 캔버스 -->
+    <canvas id="data"></canvas>
+
+    <!-- 분류 결과를 표시할 캔버스 -->
+    <canvas id="result"></canvas>
+
+    <!-- 손실 함수를 표시할 캔버스 -->
+    <canvas id="loss"></canvas>
+</body>
+
+<script>
+// =================================================================
+//                          데이터 생성 파트
+// =================================================================
+
+// 데이터의 생성: 2차원 텐서 100개
+const N = 100;
+const c1 = tf.randomNormal([N, 2]).add(2.0, 1.0);        // 평균 2.0, 1.0
+const c2 = tf.randomNormal([N, 2]).add(-2.0, -1.0);      // 평균 -2.0, -1.0
+const l1 = tf.ones([N, 1]);                              // N 만큼의 갯수를 1로 설정 (ones: 모든 요소를 1로 만드는 함수)
+const l2 = tf.zeros([N, 1]);                             // N 만큼의 갯수를 0으로 설정 (zeros: 모든 요소를 0으로 만드는 함수)
+
+// 입력 값(특성 벡터)과 결과 값(레이블)을 묶어주기
+const xs    = c1.concat(c2)                              // 입력 벡터 형식: [2.5564208 , 2.0741873], ...
+const input = xs.concat(tf.ones([2*N, 1]), 1)            // bias 항 추가: [2.5564208 , 2.0741873 , 1], ...
+const ys    = l1.concat(l2)                              // 레이블: [1], [1], [1], ... , [0], [0], [0]
+
+
+// =================================================================
+//                          가중치와 회귀 함수
+// =================================================================
+// 가중치 파라미터
+const w = tf.randomNormal([3, 1]).sub(-0.5).variable();  // 3차원 가중치
+
+// 시그모이드 함수
+const f_x = (x) => {
+    return tf.sigmoid(x.matMul(w));                      // 가중치와 입력 벡터의 곱
+}
+
+// =================================================================
+//                          최적화 파트
+// =================================================================
+// 손실 함수
+const loss = (predict, real) => {
+    return tf.losses.sigmoidCrossEntropy(predict, real).asScalar();
+}
+
+// 옵티마이저
+const alpha = 0.07;
+const optimizer = tf.train.adam(alpha);
+
+// iter: 반복 횟수, losses: 손실값
+let iter = [];
+let losses = [];
+
+// 100회 반복하며 손실값 기록
+for(let i=0; i<100; i++){
+    const l = optimizer.minimize(()=>loss(f_x(input), ys), true);   // xs 대신 bias항이 포함된 값이 들어감에 주의
+    iter.push(i);
+    losses.push(l.dataSync()[0]);
+}
+
+// =================================================================
+//                          차트 그리는 파트
+// =================================================================
+
+// 데이터 처리를 위한 함수
+function getXYfromTensor2D(t){
+    let array = t.dataSync();
+    let returnArray = [];
+    for(let i=0; i<array.length; i+=2){
+        returnArray.push({x: array[i], y: array[i+1]}) // 짝수: x값, 홀수: y값
+    }
+    return returnArray;
+} 
+
+function classify(t){
+    let array = t.dataSync();
+    let returnC1 = [];
+    let returnC2 = [];
+
+    for(let i=0; i<array.length; i+=3){
+        let c = f_x(input).dataSync()[i/3];
+
+        if(c>=0.5){
+            returnC1.push({x: array[i], y: array[i+1]});
+        }else{
+            returnC2.push({x: array[i], y: array[i+1]});
+        }
+        
+    }
+    return {c1: returnC1, c2: returnC2};
+} 
+
+// 입력 데이터 차트
+const ctxData = document.getElementById('data');
+new Chart(ctxData, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Class 1',
+            data: getXYfromTensor2D(c1),
+        },
+        {
+            label: 'Class 2',
+            data: getXYfromTensor2D(c2),
+        }
+        ]
+    }
+});
+
+// 분류 결과 차트
+const ctxResult = document.getElementById('result');
+new Chart(ctxResult, {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Class 1',
+            data: classify(input).c1,
+        },
+        {
+            label: 'Class 2',
+            data: classify(input).c2,
+        }
+        ]
+    }
+});
+
+// 손실 함수 차트
+const ctxLoss = document.getElementById('loss');
+new Chart(ctxLoss, {
+    type: 'line',
+    data: {
+        labels: iter,
+        datasets: [{
+            label: '손실 함수',
+            data: losses,
+        }]
+    }
+});
+
+
+
+</script>
+</html>
+
