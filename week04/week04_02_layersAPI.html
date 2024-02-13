@@ -28,8 +28,8 @@
 
 // 데이터의 생성: 2차원 텐서 100개
 const N = 100;
-const c1 = tf.randomNormal([N, 2]).add(2.0, 1.0);        // 평균 2.0, 1.0
-const c2 = tf.randomNormal([N, 2]).add(-2.0, -1.0);      // 평균 -2.0, -1.0
+const c1 = tf.randomNormal([N, 2]).add([2.0, 1.0]);        // 평균 2.0, 1.0
+const c2 = tf.randomNormal([N, 2]).add([-2.0, -1.0]);      // 평균 -2.0, -1.0
 const l1 = tf.ones([N, 1]);                              // N 만큼의 갯수를 1로 설정 (ones: 모든 요소를 1로 만드는 함수)
 const l2 = tf.zeros([N, 1]);                             // N 만큼의 갯수를 0으로 설정 (zeros: 모든 요소를 0으로 만드는 함수)
 
