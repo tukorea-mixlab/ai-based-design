@@ -1,0 +1,802 @@
+[
+    {
+      "income": 15,
+      "spend": 39
+    },
+    {
+      "income": 15,
+      "spend": 81
+    },
+    {
+      "income": 16,
+      "spend": 6
+    },
+    {
+      "income": 16,
+      "spend": 77
+    },
+    {
+      "income": 17,
+      "spend": 40
+    },
+    {
+      "income": 17,
+      "spend": 76
+    },
+    {
+      "income": 18,
+      "spend": 6
+    },
+    {
+      "income": 18,
+      "spend": 94
+    },
+    {
+      "income": 19,
+      "spend": 3
+    },
+    {
+      "income": 19,
+      "spend": 72
+    },
+    {
+      "income": 19,
+      "spend": 14
+    },
+    {
+      "income": 19,
+      "spend": 99
+    },
+    {
+      "income": 20,
+      "spend": 15
+    },
+    {
+      "income": 20,
+      "spend": 77
+    },
+    {
+      "income": 20,
+      "spend": 13
+    },
+    {
+      "income": 20,
+      "spend": 79
+    },
+    {
+      "income": 21,
+      "spend": 35
+    },
+    {
+      "income": 21,
+      "spend": 66
+    },
+    {
+      "income": 23,
+      "spend": 29
+    },
+    {
+      "income": 23,
+      "spend": 98
+    },
+    {
+      "income": 24,
+      "spend": 35
+    },
+    {
+      "income": 24,
+      "spend": 73
+    },
+    {
+      "income": 25,
+      "spend": 5
+    },
+    {
+      "income": 25,
+      "spend": 73
+    },
+    {
+      "income": 28,
+      "spend": 14
+    },
+    {
+      "income": 28,
+      "spend": 82
+    },
+    {
+      "income": 28,
+      "spend": 32
+    },
+    {
+      "income": 28,
+      "spend": 61
+    },
+    {
+      "income": 29,
+      "spend": 31
+    },
+    {
+      "income": 29,
+      "spend": 87
+    },
+    {
+      "income": 30,
+      "spend": 4
+    },
+    {
+      "income": 30,
+      "spend": 73
+    },
+    {
+      "income": 33,
+      "spend": 4
+    },
+    {
+      "income": 33,
+      "spend": 92
+    },
+    {
+      "income": 33,
+      "spend": 14
+    },
+    {
+      "income": 33,
+      "spend": 81
+    },
+    {
+      "income": 34,
+      "spend": 17
+    },
+    {
+      "income": 34,
+      "spend": 73
+    },
+    {
+      "income": 37,
+      "spend": 26
+    },
+    {
+      "income": 37,
+      "spend": 75
+    },
+    {
+      "income": 38,
+      "spend": 35
+    },
+    {
+      "income": 38,
+      "spend": 92
+    },
+    {
+      "income": 39,
+      "spend": 36
+    },
+    {
+      "income": 39,
+      "spend": 61
+    },
+    {
+      "income": 39,
+      "spend": 28
+    },
+    {
+      "income": 39,
+      "spend": 65
+    },
+    {
+      "income": 40,
+      "spend": 55
+    },
+    {
+      "income": 40,
+      "spend": 47
+    },
+    {
+      "income": 40,
+      "spend": 42
+    },
+    {
+      "income": 40,
+      "spend": 42
+    },
+    {
+      "income": 42,
+      "spend": 52
+    },
+    {
+      "income": 42,
+      "spend": 60
+    },
+    {
+      "income": 43,
+      "spend": 54
+    },
+    {
+      "income": 43,
+      "spend": 60
+    },
+    {
+      "income": 43,
+      "spend": 45
+    },
+    {
+      "income": 43,
+      "spend": 41
+    },
+    {
+      "income": 44,
+      "spend": 50
+    },
+    {
+      "income": 44,
+      "spend": 46
+    },
+    {
+      "income": 46,
+      "spend": 51
+    },
+    {
+      "income": 46,
+      "spend": 46
+    },
+    {
+      "income": 46,
+      "spend": 56
+    },
+    {
+      "income": 46,
+      "spend": 55
+    },
+    {
+      "income": 47,
+      "spend": 52
+    },
+    {
+      "income": 47,
+      "spend": 59
+    },
+    {
+      "income": 48,
+      "spend": 51
+    },
+    {
+      "income": 48,
+      "spend": 59
+    },
+    {
+      "income": 48,
+      "spend": 50
+    },
+    {
+      "income": 48,
+      "spend": 48
+    },
+    {
+      "income": 48,
+      "spend": 59
+    },
+    {
+      "income": 48,
+      "spend": 47
+    },
+    {
+      "income": 49,
+      "spend": 55
+    },
+    {
+      "income": 49,
+      "spend": 42
+    },
+    {
+      "income": 50,
+      "spend": 49
+    },
+    {
+      "income": 50,
+      "spend": 56
+    },
+    {
+      "income": 54,
+      "spend": 47
+    },
+    {
+      "income": 54,
+      "spend": 54
+    },
+    {
+      "income": 54,
+      "spend": 53
+    },
+    {
+      "income": 54,
+      "spend": 48
+    },
+    {
+      "income": 54,
+      "spend": 52
+    },
+    {
+      "income": 54,
+      "spend": 42
+    },
+    {
+      "income": 54,
+      "spend": 51
+    },
+    {
+      "income": 54,
+      "spend": 55
+    },
+    {
+      "income": 54,
+      "spend": 41
+    },
+    {
+      "income": 54,
+      "spend": 44
+    },
+    {
+      "income": 54,
+      "spend": 57
+    },
+    {
+      "income": 54,
+      "spend": 46
+    },
+    {
+      "income": 57,
+      "spend": 58
+    },
+    {
+      "income": 57,
+      "spend": 55
+    },
+    {
+      "income": 58,
+      "spend": 60
+    },
+    {
+      "income": 58,
+      "spend": 46
+    },
+    {
+      "income": 59,
+      "spend": 55
+    },
+    {
+      "income": 59,
+      "spend": 41
+    },
+    {
+      "income": 60,
+      "spend": 49
+    },
+    {
+      "income": 60,
+      "spend": 40
+    },
+    {
+      "income": 60,
+      "spend": 42
+    },
+    {
+      "income": 60,
+      "spend": 52
+    },
+    {
+      "income": 60,
+      "spend": 47
+    },
+    {
+      "income": 60,
+      "spend": 50
+    },
+    {
+      "income": 61,
+      "spend": 42
+    },
+    {
+      "income": 61,
+      "spend": 49
+    },
+    {
+      "income": 62,
+      "spend": 41
+    },
+    {
+      "income": 62,
+      "spend": 48
+    },
+    {
+      "income": 62,
+      "spend": 59
+    },
+    {
+      "income": 62,
+      "spend": 55
+    },
+    {
+      "income": 62,
+      "spend": 56
+    },
+    {
+      "income": 62,
+      "spend": 42
+    },
+    {
+      "income": 63,
+      "spend": 50
+    },
+    {
+      "income": 63,
+      "spend": 46
+    },
+    {
+      "income": 63,
+      "spend": 43
+    },
+    {
+      "income": 63,
+      "spend": 48
+    },
+    {
+      "income": 63,
+      "spend": 52
+    },
+    {
+      "income": 63,
+      "spend": 54
+    },
+    {
+      "income": 64,
+      "spend": 42
+    },
+    {
+      "income": 64,
+      "spend": 46
+    },
+    {
+      "income": 65,
+      "spend": 48
+    },
+    {
+      "income": 65,
+      "spend": 50
+    },
+    {
+      "income": 65,
+      "spend": 43
+    },
+    {
+      "income": 65,
+      "spend": 59
+    },
+    {
+      "income": 67,
+      "spend": 43
+    },
+    {
+      "income": 67,
+      "spend": 57
+    },
+    {
+      "income": 67,
+      "spend": 56
+    },
+    {
+      "income": 67,
+      "spend": 40
+    },
+    {
+      "income": 69,
+      "spend": 58
+    },
+    {
+      "income": 69,
+      "spend": 91
+    },
+    {
+      "income": 70,
+      "spend": 29
+    },
+    {
+      "income": 70,
+      "spend": 77
+    },
+    {
+      "income": 71,
+      "spend": 35
+    },
+    {
+      "income": 71,
+      "spend": 95
+    },
+    {
+      "income": 71,
+      "spend": 11
+    },
+    {
+      "income": 71,
+      "spend": 75
+    },
+    {
+      "income": 71,
+      "spend": 9
+    },
+    {
+      "income": 71,
+      "spend": 75
+    },
+    {
+      "income": 72,
+      "spend": 34
+    },
+    {
+      "income": 72,
+      "spend": 71
+    },
+    {
+      "income": 73,
+      "spend": 5
+    },
+    {
+      "income": 73,
+      "spend": 88
+    },
+    {
+      "income": 73,
+      "spend": 7
+    },
+    {
+      "income": 73,
+      "spend": 73
+    },
+    {
+      "income": 74,
+      "spend": 10
+    },
+    {
+      "income": 74,
+      "spend": 72
+    },
+    {
+      "income": 75,
+      "spend": 5
+    },
+    {
+      "income": 75,
+      "spend": 93
+    },
+    {
+      "income": 76,
+      "spend": 40
+    },
+    {
+      "income": 76,
+      "spend": 87
+    },
+    {
+      "income": 77,
+      "spend": 12
+    },
+    {
+      "income": 77,
+      "spend": 97
+    },
+    {
+      "income": 77,
+      "spend": 36
+    },
+    {
+      "income": 77,
+      "spend": 74
+    },
+    {
+      "income": 78,
+      "spend": 22
+    },
+    {
+      "income": 78,
+      "spend": 90
+    },
+    {
+      "income": 78,
+      "spend": 17
+    },
+    {
+      "income": 78,
+      "spend": 88
+    },
+    {
+      "income": 78,
+      "spend": 20
+    },
+    {
+      "income": 78,
+      "spend": 76
+    },
+    {
+      "income": 78,
+      "spend": 16
+    },
+    {
+      "income": 78,
+      "spend": 89
+    },
+    {
+      "income": 78,
+      "spend": 1
+    },
+    {
+      "income": 78,
+      "spend": 78
+    },
+    {
+      "income": 78,
+      "spend": 1
+    },
+    {
+      "income": 78,
+      "spend": 73
+    },
+    {
+      "income": 79,
+      "spend": 35
+    },
+    {
+      "income": 79,
+      "spend": 83
+    },
+    {
+      "income": 81,
+      "spend": 5
+    },
+    {
+      "income": 81,
+      "spend": 93
+    },
+    {
+      "income": 85,
+      "spend": 26
+    },
+    {
+      "income": 85,
+      "spend": 75
+    },
+    {
+      "income": 86,
+      "spend": 20
+    },
+    {
+      "income": 86,
+      "spend": 95
+    },
+    {
+      "income": 87,
+      "spend": 27
+    },
+    {
+      "income": 87,
+      "spend": 63
+    },
+    {
+      "income": 87,
+      "spend": 13
+    },
+    {
+      "income": 87,
+      "spend": 75
+    },
+    {
+      "income": 87,
+      "spend": 10
+    },
+    {
+      "income": 87,
+      "spend": 92
+    },
+    {
+      "income": 88,
+      "spend": 13
+    },
+    {
+      "income": 88,
+      "spend": 86
+    },
+    {
+      "income": 88,
+      "spend": 15
+    },
+    {
+      "income": 88,
+      "spend": 69
+    },
+    {
+      "income": 93,
+      "spend": 14
+    },
+    {
+      "income": 93,
+      "spend": 90
+    },
+    {
+      "income": 97,
+      "spend": 32
+    },
+    {
+      "income": 97,
+      "spend": 86
+    },
+    {
+      "income": 98,
+      "spend": 15
+    },
+    {
+      "income": 98,
+      "spend": 88
+    },
+    {
+      "income": 99,
+      "spend": 39
+    },
+    {
+      "income": 99,
+      "spend": 97
+    },
+    {
+      "income": 101,
+      "spend": 24
+    },
+    {
+      "income": 101,
+      "spend": 68
+    },
+    {
+      "income": 103,
+      "spend": 17
+    },
+    {
+      "income": 103,
+      "spend": 85
+    },
+    {
+      "income": 103,
+      "spend": 23
+    },
+    {
+      "income": 103,
+      "spend": 69
+    },
+    {
+      "income": 113,
+      "spend": 8
+    },
+    {
+      "income": 113,
+      "spend": 91
+    },
+    {
+      "income": 120,
+      "spend": 16
+    },
+    {
+      "income": 120,
+      "spend": 79
+    },
+    {
+      "income": 126,
+      "spend": 28
+    },
+    {
+      "income": 126,
+      "spend": 74
+    },
+    {
+      "income": 137,
+      "spend": 18
+    },
+    {
+      "income": 137,
+      "spend": 83
+    }
+  ]
