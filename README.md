@@ -13,3 +13,5 @@
 |week04|week04_01_coreAPI.html|로지스틱 회귀 - Core API 사용 분류|
 |week04|week04_02_layersAPI.html|로지스틱 회귀 - Layers API 사용 분류|
 |week04|week04_03_blood_pressure.html|로지스틱 회귀 - 나이와 BMI로 고혈압 추론하기|
+|week05|week05_01_clustering.html|비지도학습 - K-Means 군집화|
+|week05|week05_02_customer.html|비지도학습 - 고객 데이터 군집화하기|
