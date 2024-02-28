@@ -1,0 +1,43 @@
+<!-- 인공지능활용디자인 6주차 - 순차 데이터 분석 - 복소수 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>순차 데이터 분석 - 복소수</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+</body>
+
+<script>
+// =================================================================
+//                          복소수 이해하기
+// =================================================================
+
+//                       실수부        허수부
+const c1 = tf.complex([1.0, 2.0], [3.0, 4.0]); // 1+3i, 2+4i를 나타냄
+
+const r1 = tf.real(c1); // 실수부 추출
+console.log('실수부:')
+r1.print();
+
+const r2 = tf.imag(c1); // 허수부 추출
+console.log('허수부:')
+r2.print();
+
+console.log('프린트:');
+c1.print();
+
+console.log('프린트(상세):');
+c1.print(true);
+
+console.log('텐서 배열:');
+console.log(c1.dataSync());
+
+</script>
+</html>
+

@@ -1,0 +1,106 @@
+<!-- 인공지능활용디자인 6주차 - 순차 데이터 분석 - 코사인 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>순차 데이터 분석 - 코사인</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+    <!-- 데이터를 표시할 캔버스 -->
+    <canvas id="data"></canvas>
+
+    <!-- FFT 결과를 표시할 캔버스 -->
+    <canvas id="result"></canvas>
+</body>
+
+<script>
+// =================================================================
+//                          데이터 생성 파트
+// =================================================================
+
+// 간단한 cos 함수 만들기
+const doublePi = tf.scalar(2.0 * Math.PI); // 2PI
+const xs = tf.mul(doublePi, tf.range(-1.5, 1.5, 0.1)); // -3PI ~ 3PI 까지를 0.1 단위로
+const ys = tf.cos(xs);
+
+// =================================================================
+//                          FFT 실행하기
+// =================================================================
+
+// FFT 입력에는 복소수가 필요
+const input = tf.complex(ys, ys.zerosLike());
+
+// FFT 실행
+const transformed = tf.fft(input);
+
+const real = tf.real(transformed);
+const imag = tf.imag(transformed);
+
+// 최종 벡터의 크기 - sqrt( a^2 + b^2) 
+const norm = tf.sqrt(real.square().add(imag.square()));
+
+// =================================================================
+//                          샘플링 빈 구하기
+// =================================================================
+
+// fs : 1초에 몇개를 샘플링 하는가?
+const fs = 30;
+
+// N : 총 데이터 샘플은 몇개인가?
+const N = xs.size;
+
+// 주파수: bins의 계수
+const freq = fs/N;
+
+// =================================================================
+//                          차트 그리는 파트
+// =================================================================
+
+// 데이터 처리를 위한 함수
+function getFFTfromTensor(t, f){
+    let array = t.dataSync();
+    let returnArray = [];
+    for(let i=0; i<array.length; i++){
+        returnArray.push({x: String(i*f), y: array[i]});
+    }
+    return returnArray;
+} 
+
+
+// 입력 데이터 차트
+const ctxData = document.getElementById('data');
+new Chart(ctxData, {
+    type: 'line',
+    data: {
+        labels: xs.dataSync(),
+        datasets: [{
+            label: 'cos 곡선',
+            data: ys.dataSync(),
+        }
+        ]
+    }
+});
+
+
+// 결과 차트
+const ctxResult = document.getElementById('result');
+new Chart(ctxResult, {
+    type: 'bar',
+    data: {
+        datasets: [{
+            label: 'FFT 실행 결과',
+            data: getFFTfromTensor(norm, freq),
+        }
+        ]
+    }
+});
+
+
+</script>
+</html>
+
