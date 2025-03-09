@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>tfjs Core API 사용법</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+</head>
+<body>
+<script>
+
+// =================== 1) 텐서 생성하기 ===================
+const t1 = tf.tensor([1, 2, 3])             // 1차원 텐서
+
+t1.print()                                  // 텐서의 결과 출력
+console.log('rank: ', t1.rank)              // 차원의 수 출력  
+console.log('shape: ', t1.shape)            // 각 차원의 크기 출력     
+console.log('dtype: ', t1.dtype)            // 데이터 타입 출력
+
+console.log('-----')
+
+const t2 = tf.tensor([[1, 2], [3, 4]])      // 2차원 텐서
+
+t2.print()                                  // 텐서의 결과 출력
+console.log('rank: ', t2.rank)              // 차원의 수 출력  
+console.log('shape: ', t2.shape)            // 각 차원의 크기 출력     
+console.log('dtype: ', t2.dtype)            // 데이터 타입 출력
+
+const t3 = tf.tensor([1, 2, 3, 4, 5, 6], [3, 2])   // 2차원 텐서 tensor(전체데이터, 차원크기)로 정의
+
+t3.print()                                  // 텐서의 결과 출력
+console.log('rank: ', t3.rank)              // 차원의 수 출력  
+console.log('shape: ', t3.shape)            // 각 차원의 크기 출력     
+console.log('dtype: ', t3.dtype)            // 데이터 타입 출력
+
+
+// =================== 2) 텐서 값 받아오기 ===================
+const t4 = tf.tensor([[1, 2], [3, 4]])
+
+t4.data().then(function(result){            // 비동기식: 작업이 완료된 후 내용을 실행
+    console.log('비동기식 결과: ', result)
+})
+
+console.log('동기식 결과: ', t4.dataSync())     // 동기식: 작업 완료될 때 까지 코드 중단
+
+
+// =================== 3) 텐서의 연산 ===================
+const a = tf.tensor([1, 2, 3, 4, 5])            // 1차원 텐서
+const b = tf.tensor([10, 20, 30, 40, 50])       // 1차원 텐서
+const c = tf.scalar(5)                          // 스칼라 값
+
+// 루트(tf)를 이용한 연산 (a와 b를 연산)
+const result1 = tf.add(a, b)                    // 텐서+텐서
+const result2 = tf.sub(a, b)                    // 텐서-텐서
+const result3 = tf.mul(a, b)                    // 텐서*텐서
+const result4 = tf.div(a, b)                    // 텐서/텐서
+
+console.log('a와 b의 연산')
+result1.print()
+result2.print()
+result3.print()
+result4.print()
+
+// a를 기준으로 연산 (a에 c를 연산)
+const result5 = a.add(c)                        // 텐서+스칼라
+const result6 = a.sub(c)                        // 텐서-스칼라
+const result7 = a.mul(c)                        // 텐서*스칼라
+const result8 = a.div(c)                        // 텐서/스칼라
+
+console.log('a와 c의 연산')
+result5.print()
+result6.print()
+result7.print()
+result8.print()
+
+</script>
+</body>
+</html>
+
