@@ -7,84 +7,86 @@
     <title>다항 회귀 최적화 - 사인 곡선 피팅</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
 </head>
 <body>
-    <!-- 데이터를 표시할 캔버스 -->
-    <canvas id="data"></canvas>
-
-    <!-- 손실 함수를 표시할 캔버스 -->
-    <canvas id="loss"></canvas>
 </body>
 
 <script>
 
 // xs: -PI~PI, 0.01 간격, noise: 0.05의 랜덤값, ys: sin값에 노이즈를 추가한 값
-const xs    = tf.mul(2 * Math.PI, tf.range(-0.5, 0.5, 0.01));
-const noise = tf.mul(tf.randomNormal([xs.size]), 0.05);
-const ys    = tf.sin(xs).add(noise);
+const xs    = tf.range(-0.5, 0.5, 0.01).mul(2 * Math.PI)
+const noise = tf.mul(tf.randomNormal([xs.size]), 0.05)
+const ys    = tf.sin(xs).add(noise)
 
 // 2차 함수 가중치, variable()로 선언하여야 최적화 이후 자동으로 변경됨
-const w0 = tf.scalar(Math.random() - 0.5).variable();
-const w1 = tf.scalar(Math.random() - 0.5).variable();
-const w2 = tf.scalar(Math.random() - 0.5).variable();
+const w0 = tf.scalar(Math.random() - 0.5).variable()
+const w1 = tf.scalar(Math.random() - 0.5).variable()
+const w2 = tf.scalar(Math.random() - 0.5).variable()
 
 // 다항 회귀 함수(2차): w2 * x^2 + w1 * x + w0
 const f_x = (x) => {
-    return w2.mul(x).mul(x).add(w1.mul(x)).add(w0);
+    return w2.mul(x.pow(2)).add(w1.mul(x)).add(w0)
 }
 
 // 손실함수: 예측값과 실제값의 차이의 제곱 평균
 const loss = (predict, real) => {
-    return predict.sub(real).square().mean();
+    return predict.sub(real).square().mean()
 }
 
 // 알파(학습률): 0.3, adam 옵티마이저 사용
 const alpha = 0.3;
-const optimizer = tf.train.adam(alpha);
+const optimizer = tf.train.adam(alpha)
 
-// iter: 반복 횟수, losses: 손실값
-let iter = [];
-let losses = [];
+// 실행 함수
+function run() {
+    // 시각화를 위한 데이터 세트
+    let data_set = []       // 그래프로 그릴 원본 데이터 (x, y)
+    let loss_set = []       // 그래프로 그릴 손실 데이터 (iteration, loss)
+    let fit_set  = []       // N차함수로 회귀분석한 데이터 (x, y)
 
-// 100회 반복하며 손실값 기록
-for(let i=0; i<100; i++){
-    const l = optimizer.minimize(()=>loss(f_x(xs), ys), true);
-    iter.push(i);
-    losses.push(l.dataSync()[0]);
+    // 원본 데이터의 형식 변환
+    const array_x = xs.dataSync()
+    const array_y = ys.dataSync()
+    for(let i=0; i<xs.size; i++){
+        data_set.push({x: array_x[i], y: array_y[i]})
+    }
+
+    // 100회 반복하며 손실값 기록
+    for(let i=0; i<100; i++){
+        const l = optimizer.minimize(() => loss(f_x(xs), ys), true)  // true 옵션에 의해 가중치 업데이트
+        loss_set.push({x: i, y: l.dataSync()[0]})
+    }
+
+    const array_fx = f_x(xs).dataSync()
+    for(let i=0; i<xs.size; i++){
+        fit_set.push({x: array_x[i], y: array_fx[i]})
+    }
+
+    tfvis.visor().toggleFullScreen()
+
+    tfvis.render.scatterplot(
+        {name: '데이터'},
+        {values: [data_set, fit_set], series: ['사인곡선', '피팅라인']},
+        {
+            xLabel: 'x',
+            yLabel: 'sin(x)',
+            height: 400
+        }
+    )
+
+    tfvis.render.linechart(
+        {name: '학습률'},
+        {values: loss_set},
+        {
+            xLabel: '반복',
+            yLabel: '손실값',
+            height: 400
+        }
+    )
 }
 
-// 차트
-const ctxData = document.getElementById('data');
-new Chart(ctxData, {
-    type: 'scatter',
-    data: {
-        labels: xs.dataSync(),
-        datasets: [{
-            label: '노이즈를 포함하는 사인 곡선',
-            data: ys.dataSync(),
-        },
-        {
-            label: '피팅 라인',
-            data: f_x(xs).dataSync(),
-        }
-        ]
-    }
-});
-
-// 차트
-const ctxLoss = document.getElementById('loss');
-new Chart(ctxLoss, {
-    type: 'line',
-    data: {
-        labels: iter,
-        datasets: [{
-            label: '손실 함수',
-            data: losses,
-        }]
-    }
-});
+run()
 
 </script>
 </html>
