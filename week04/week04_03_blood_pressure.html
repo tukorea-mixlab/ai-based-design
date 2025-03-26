@@ -7,73 +7,58 @@
     <title>로지스틱 회귀 - 고혈압 분류 예시</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
 
 </head>
 <body>
     <!-- UI 영역 -->
     <h1>나이, BMI로 고혈압 추정하기</h1>
-    <input id="inputAge" placeholder="나이"/>
-    <input id="inputBMI" placeholder="BMI"/>
+    <input id="input1" placeholder="나이"/>
+    <input id="input2" placeholder="BMI"/>
     <button id="calc">계산하기</button>
     <p id="prediction"></p>
-
-    <!-- 데이터를 표시할 캔버스 -->
-    <canvas id="data"></canvas>
-
-    <!-- 분류 결과를 표시할 캔버스 -->
-    <canvas id="result"></canvas>
-
-    <!-- 손실 함수를 표시할 캔버스 -->
-    <canvas id="loss"></canvas>
 </body>
 
 <script>
 // =================================================================
 //                          데이터 생성 파트
 // =================================================================
-let c1, c2, l1, l2;
-let xs, ys, input;
+let c1, c2, v1, v2
+let xs, ys
 
 fetch('./data.json') // data.json의 내용 불러오기
     .then((response) => {
         return response.json()
     })
     .then((json) => {
-        let loadedC1 = [];
-        let loadedC2 = [];
-        let loadedL1 = [];
-        let loadedL2 = [];
+        // 헤더의 CLASS가 1인 경우 C1, 0인 경우를 C2
+        let dataC1 = json.filter(d => d.CLASS == 1)
+        let dataC2 = json.filter(d => d.CLASS == 0)
 
-        for(let i in json){
-            if(json[i].DIS <= 2){
-                loadedC1.push( json[i].AGE )
-                loadedC1.push( json[i].BMI )
-                loadedL1.push(1)
-            }else{
-                loadedC2.push( json[i].AGE )
-                loadedC2.push( json[i].BMI )
-                loadedL2.push(0)
-            }
-        }
+        // 데이터 수를 맞춰주기 (적은 쪽으로 맞춤)
+        dataC1 = (dataC1.length > dataC2.length)? dataC1.splice(0, dataC2.length) : dataC1
+        dataC2 = (dataC2.length > dataC1.length)? dataC2.splice(0, dataC1.length) : dataC2
 
-        // 같은 사이즈로 바꿔주기 (갯수가 다르면 학습에 지장을 준다)
-        if(loadedC1.length > loadedC2.length){
-            loadedC1 = loadedC1.slice(0, loadedC2.length)
-            loadedL1 = loadedL1.slice(0, loadedL2.length)
-        }else{
-            loadedC2 = loadedC2.slice(0, loadedC1.length)
-            loadedL2 = loadedL2.slice(0, loadedL1.length)
-        }
+        // C1, C2 각각의 값1, 값2, 레이블
+        const c1_val1   = tf.tensor( dataC1.map(d => d.AGE) )      
+        const c1_val2   = tf.tensor( dataC1.map(d => d.BMI) )     
+        const c1_label  = tf.tensor( dataC1.map(d => d.CLASS) )
+        const c2_val1   = tf.tensor( dataC2.map(d => d.AGE) ) 
+        const c2_val2   = tf.tensor( dataC2.map(d => d.BMI) )
+        const c2_label  = tf.tensor( dataC2.map(d => d.CLASS) )
 
-        c1 = tf.tensor2d(loadedC1, [loadedC1.length/2, 2]);
-        c2 = tf.tensor2d(loadedC2, [loadedC2.length/2, 2]);
-        l1 = tf.tensor2d(loadedL1, [loadedL1.length, 1]);
-        l2 = tf.tensor2d(loadedL2, [loadedL2.length, 1]);
+        v1 = c1_val1.concat(c2_val1)  // 값1의 전체 텐서 (정규화를 위한)
+        v2 = c1_val2.concat(c2_val2)  // 값2의 전체 텐서 (정규화를 위한)
 
-        xs = c1.concat(c2);
-        ys = l1.concat(l2);
+        const x1 = v1.sub(v1.min()).div(v1.max().sub(v1.min()))     // 값 1 정규화
+        const x2 = v2.sub(v2.min()).div(v2.max().sub(v2.min()))     // 값 2 정규화
 
+        c1 = c1_val1.stack(c1_val2, 1)      // 원본 class1
+        c2 = c2_val1.stack(c2_val2, 1)      // 원본 class2
+
+        xs = x1.stack(x2, 1)                // 정규화된 전체 X: [[val1, val2]...]
+        ys = c1_label.concat(c2_label)      // 전체 레이블 Y: [1, 1, 0, ...]
+        
         training(); // 최적화 실행
     })
 
@@ -110,113 +95,115 @@ async function training(){
 
     console.log('정확도: ' + history.history.acc[history.history.acc.length-1]);
 
-    drawGraphs();
+    visualize();
 }
+
 
 // =================================================================
 //                          차트 그리는 파트
 // =================================================================
+// 실행 함수
+function visualize() {
+    // 시각화를 위한 데이터 세트
+    let original_c1 = []        // 원본 데이터 (Class1)
+    let original_c2 = []        // 원본 데이터 (Class2)
+    let loss_set    = []        // 그래프로 그릴 손실 데이터 (iteration, loss)
+    let result_c1   = []        // 분류한 결과 (Class1)
+    let result_c2   = []        // 분류한 결과 (Class2)
 
-// 데이터 처리를 위한 함수
-function getXYfromTensor2D(t){
-    let array = t.dataSync();
-    let returnArray = [];
-    for(let i=0; i<array.length; i+=2){
-        returnArray.push({x: array[i], y: array[i+1]}) // 짝수: x값, 홀수: y값
+    // 원본 데이터의 형식 변환 (2D텐서 ->: {x, y})
+    original_c1 = getXYfromTensor2D(c1)
+    original_c2 = getXYfromTensor2D(c2)
+
+    // 손실값
+    for(let i=0; i<history.history.loss.length; i++){
+        loss_set.push({x: i, y: history.history.loss[i]})
     }
-    return returnArray;
-} 
 
-function classify(t){
-    let array = t.dataSync();
-    let returnC1 = [];
-    let returnC2 = [];
-
-    for(let i=0; i<array.length; i+=2){
-        let c = model.predict(t).dataSync()[i/2] // 모델의 계산은 model.predict(tensor)
-
-        if(c>=0.5){
-            returnC1.push({x: array[i], y: array[i+1]});
+    // 결과값
+    // model.predict(tensor)는 class에 속할 확률을 도출한 배열 [0.99, 0.98...]
+    const array_all = getXYfromTensor2D(xs)
+    const array_c = model.predict(xs).dataSync()
+    for(let i=0; i<array_c.length; i++){
+        if(array_c[i]>0.5){
+            result_c1.push(array_all[i])
         }else{
-            returnC2.push({x: array[i], y: array[i+1]});
+            result_c2.push(array_all[i])
         }
-        
     }
 
-    return {c1: returnC1, c2: returnC2};
-} 
-
-function drawGraphs(){
-    // 입력 데이터 차트
-    const ctxData = document.getElementById('data');
-    new Chart(ctxData, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Class 1',
-                data: getXYfromTensor2D(c1),
-            },
-            {
-                label: 'Class 2',
-                data: getXYfromTensor2D(c2),
-            }
-            ]
+    // 그래프 출력
+    tfvis.render.scatterplot(
+        {name: '원본 데이터'},
+        {values: [original_c1, original_c2], series: ['Class1', 'Class2']},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            zoomToFit: true,
+            height: 400
         }
-    });
+    )
 
-    //분류 결과 차트
-    const ctxResult = document.getElementById('result');
-    new Chart(ctxResult, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Class 1',
-                data: classify(xs).c1,
-            },
-            {
-                label: 'Class 2',
-                data: classify(xs).c2,
-            }
-            ]
+    tfvis.render.scatterplot(
+        {name: '분류 결과'},
+        {values: [result_c1, result_c2], series: ['Class1', 'Class2']},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            zoomToFit: true,
+            height: 400
         }
-    });
+    )
 
-    // 손실 함수 차트
-    const ctxLoss = document.getElementById('loss');
-    new Chart(ctxLoss, {
-        type: 'line',
-        data: {
-            labels: history.epoch,
-            datasets: [{
-                label: '손실 함수',
-                data: history.history.loss,
-            }]
+    tfvis.render.linechart(
+        {name: '학습률'},
+        {values: loss_set},
+        {
+            xLabel: '반복',
+            yLabel: '손실값',
+            zoomToFit: true,
+            height: 400
         }
-    });
-
+    )
 }
+
+
+// =================================================================
+//                          데이터 처리를 위한 함수
+// =================================================================
+function getXYfromTensor2D(_t){
+    let _array = _t.dataSync();
+    let _returnArray = [];
+    for(let i=0; i<_array.length; i+=2){
+        _returnArray.push({x: _array[i], y: _array[i+1]}) // 짝수: x값, 홀수: y값
+    }
+    return _returnArray;
+} 
 
 // =================================================================
 //                          결과 추정 파트
 // =================================================================
 
-let inputBoxAge = document.getElementById('inputAge');
-let inputBoxBMI = document.getElementById('inputBMI');
+let input1 = document.getElementById('input1');
+let input2 = document.getElementById('input2');
 let calcButton = document.getElementById('calc');
 let prediction = document.getElementById('prediction');
 
+// 결과 출력
 calcButton.addEventListener('click', ()=>{
-    let age = (inputBoxAge.value-21)/2;
-    let bmi = inputBoxBMI.value;
-    const input = tf.tensor2d([age, bmi], [1, 2]);
-
+    const x1 = tf.tensor([Number(input1.value)]).sub(v1.min()).div(v1.max().sub(v1.min()))     // 값 1 정규화
+    const x2 = tf.tensor([Number(input2.value)]).sub(v2.min()).div(v2.max().sub(v2.min()))     // 값 2 정규화
+    
+    const input = x1.stack(x2, 1)
     let p = model.predict(input).dataSync()[0];
     if(p >= 0.5){
-        prediction.innerText = `나이 ${age}에 BMI ${bmi}의 경우 고혈압일 수 있습니다. (p=${p})`;
+        prediction.innerText = `나이 ${input1.value}에 BMI ${input2.value}의 경우 고혈압일 수 있습니다. (p=${p})`;
     }else{
-        prediction.innerText = `나이 ${age}에 BMI ${bmi}의 경우 정상일 수 있습니다. (p=${p})`;
+        prediction.innerText = `나이 ${input1.value}에 BMI ${input2.value}의 경우 정상일 수 있습니다. (p=${p})`;
     }
 });
+
+
 
 
 </script>

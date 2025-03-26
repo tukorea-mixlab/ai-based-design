@@ -7,25 +7,16 @@
     <title>로지스틱 회귀 - Layers API</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
 
 </head>
 <body>
-    <!-- 데이터를 표시할 캔버스 -->
-    <canvas id="data"></canvas>
-
-    <!-- 분류 결과를 표시할 캔버스 -->
-    <canvas id="result"></canvas>
-
-    <!-- 손실 함수를 표시할 캔버스 -->
-    <canvas id="loss"></canvas>
 </body>
 
 <script>
 // =================================================================
 //                          데이터 생성 파트
 // =================================================================
-
 // 데이터의 생성: 2차원 텐서 100개
 const N = 100;
 const c1 = tf.randomNormal([N, 2]).add([2.0, 1.0]);        // 평균 2.0, 1.0
@@ -39,12 +30,13 @@ const ys    = l1.concat(l2)                              // 레이블: [1], [1],
 
 // * Layers API에서는 bias 항을 따로 추가할 필요가 없음! - input 변수 미사용
 
+
 // =================================================================
 //                      Layers API - 모델 설정
 // =================================================================
-const model = tf.sequential();
+const model = tf.sequential()
 
-model.add( tf.layers.dense({units: 1, batchInputShape: [null, 2]}) ) // 2개 요소로 이루어진 입력 벡터
+model.add( tf.layers.dense({units: 1, batchInputShape: [null, 2]}) ) // 2개 요소(x,y)로 이루어진 입력 벡터
 
 
 // =================================================================
@@ -52,7 +44,7 @@ model.add( tf.layers.dense({units: 1, batchInputShape: [null, 2]}) ) // 2개 요
 // =================================================================
 // 손실 함수 (그대로 사용)
 const loss = (predict, real) => {
-    return tf.losses.sigmoidCrossEntropy(predict, real).asScalar();
+    return tf.losses.sigmoidCrossEntropy(predict, real).asScalar()
 }
 
 // 모델 최적화 정의 (compile)
@@ -65,100 +57,97 @@ model.compile({
 // 학습: 비동기식 함수 (맨 마지막에 실행)
 let history;
 async function training(){
-    console.log('학습 시작!');
-    history = await model.fit(xs, ys, {epochs: 100}); // epochs: 학습 반복 횟수
-    console.log('학습 완료!');
-    console.log(model.summary());
+    console.log('학습 시작!')
+    history = await model.fit(xs, ys, {epochs: 300}) // epochs: 학습 반복 횟수
+    console.log('학습 완료!')
+    console.log(model.summary())
 
-    drawGraphs();
+    console.log('정확도: ' + history.history.acc[history.history.acc.length-1]);
+
+    visualize();
 }
+
+training();
 
 // =================================================================
 //                          차트 그리는 파트
 // =================================================================
+// 실행 함수
+function visualize() {
+    // 시각화를 위한 데이터 세트
+    let original_c1 = []        // 원본 데이터 (Class1)
+    let original_c2 = []        // 원본 데이터 (Class2)
+    let loss_set    = []        // 그래프로 그릴 손실 데이터 (iteration, loss)
+    let result_c1   = []        // 분류한 결과 (Class1)
+    let result_c2   = []        // 분류한 결과 (Class2)
 
-// 데이터 처리를 위한 함수
-function getXYfromTensor2D(t){
-    let array = t.dataSync();
-    let returnArray = [];
-    for(let i=0; i<array.length; i+=2){
-        returnArray.push({x: array[i], y: array[i+1]}) // 짝수: x값, 홀수: y값
+    // 원본 데이터의 형식 변환 (2D텐서 ->: {x, y})
+    original_c1 = getXYfromTensor2D(c1)
+    original_c2 = getXYfromTensor2D(c2)
+
+    // 손실값
+    for(let i=0; i<history.history.loss.length; i++){
+        loss_set.push({x: i, y: history.history.loss[i]})
     }
-    return returnArray;
-} 
 
-function classify(t){
-    let array = t.dataSync();
-    let returnC1 = [];
-    let returnC2 = [];
-
-    for(let i=0; i<array.length; i+=2){
-        let c = model.predict(t).dataSync()[i/2] // 모델의 계산은 model.predict(tensor)
-
-        if(c>=0.5){
-            returnC1.push({x: array[i], y: array[i+1]});
+    // 결과값
+    // model.predict(tensor)는 class에 속할 확률을 도출한 배열 [0.99, 0.98...]
+    const array_all = getXYfromTensor2D(xs)
+    const array_c = model.predict(xs).dataSync()
+    for(let i=0; i<array_c.length; i++){
+        if(array_c[i]>0.5){
+            result_c1.push(array_all[i])
         }else{
-            returnC2.push({x: array[i], y: array[i+1]});
+            result_c2.push(array_all[i])
         }
-        
     }
-    return {c1: returnC1, c2: returnC2};
-} 
 
-function drawGraphs(){
-    // 입력 데이터 차트
-    const ctxData = document.getElementById('data');
-    new Chart(ctxData, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Class 1',
-                data: getXYfromTensor2D(c1),
-            },
-            {
-                label: 'Class 2',
-                data: getXYfromTensor2D(c2),
-            }
-            ]
+    // 그래프 출력
+    tfvis.visor().toggleFullScreen()
+
+    tfvis.render.scatterplot(
+        {name: '원본 데이터'},
+        {values: [original_c1, original_c2], series: ['Class1', 'Class2']},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
         }
-    });
+    )
 
-    //분류 결과 차트
-    const ctxResult = document.getElementById('result');
-    new Chart(ctxResult, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: 'Class 1',
-                data: classify(xs).c1,
-            },
-            {
-                label: 'Class 2',
-                data: classify(xs).c2,
-            }
-            ]
+    tfvis.render.scatterplot(
+        {name: '분류 결과'},
+        {values: [result_c1, result_c2], series: ['Class1', 'Class2']},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
         }
-    });
+    )
 
-    // 손실 함수 차트
-    const ctxLoss = document.getElementById('loss');
-    new Chart(ctxLoss, {
-        type: 'line',
-        data: {
-            labels: history.epoch,
-            datasets: [{
-                label: '손실 함수',
-                data: history.history.loss,
-            }]
+    tfvis.render.linechart(
+        {name: '학습률'},
+        {values: loss_set},
+        {
+            xLabel: '반복',
+            yLabel: '손실값',
+            height: 400
         }
-    });
-
+    )
 }
 
+
 // =================================================================
-//                          최적화 실행 파트
+//                          데이터 처리를 위한 함수
 // =================================================================
-training();
+function getXYfromTensor2D(_t){
+    let _array = _t.dataSync();
+    let _returnArray = [];
+    for(let i=0; i<_array.length; i+=2){
+        _returnArray.push({x: _array[i], y: _array[i+1]}) // 짝수: x값, 홀수: y값
+    }
+    return _returnArray;
+} 
 
 </script>
 </html>
