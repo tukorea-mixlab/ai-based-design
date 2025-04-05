@@ -7,40 +7,37 @@
     <title>비지도학습 - 고객 정보 군집화</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
 
 </head>
 <body>
-    <!-- 데이터를 표시할 캔버스 -->
-    <canvas id="data"></canvas>
-
-    <!-- 분류 결과를 표시할 캔버스 -->
-    <canvas id="result"></canvas>
-
-    <!-- 손실 함수를 표시할 캔버스 -->
-    <canvas id="loss"></canvas>
 </body>
 
 <script>
 // =================================================================
 //                          데이터 생성 파트
 // =================================================================
-let xs;
-const K = 3;
+let xo, xs;
+let K = 7;
+let model;
 
 fetch('./data.json') // data.json의 내용 불러오기
     .then((response) => {
         return response.json()
     })
     .then((json) => {
-        let data = [];
+        const dataX = json.map(d => d.income) // csv의 헤더 값(json의 키 값)
+        const dataY = json.map(d => d.spend) // csv의 헤더 값(json의 키 값)
 
-        for(let i in json){
-            data.push(json[i].income)
-            data.push(json[i].spend)
-        }
+        px = tf.tensor(dataX) // X값 텐서 생성
+        py = tf.tensor(dataY) // Y값 텐서 생성 
 
-        xs = tf.tensor(data).reshape([data.length/2, 2]);
+        // 정규화 (0~1로 만들기)
+        nx = px.sub(px.min()).div(px.max().sub(px.min()))
+        ny = py.sub(py.min()).div(py.max().sub(py.min()))
+
+        xo = px.stack(py, 1);
+        xs = nx.stack(ny, 1);
 
         run();
     })
@@ -48,7 +45,6 @@ fetch('./data.json') // data.json의 내용 불러오기
 // =================================================================
 //                          K-평균 알고리즘
 // =================================================================
-
 class KMeans{
     // k;                      // 원하는 군집의 수
     // dim;                    // 데이터 샘플의 차원
@@ -58,24 +54,24 @@ class KMeans{
 
     // 생성자: 입력 데이터와 군집 수로 초기화 (1단계)
     constructor(xs, k){
-        this.dim = xs.shape[1];                                         // x, y의 2차원이므로, dim=2
-        this.k = k;                                                     // 3개로 나눈다면 k=3
-        this.centroids = tf.randomNormal([this.k, this.dim], 50)        // [K, 2]의 랜덤 중심점
-        this.xs = xs;                                                   // [N, 2]의 입력 데이터
-        this.clusterAssignment;                                         // 할당된 군집의 정보
+        this.dim = 2;                                           // N개 항목에 대한 (X, Y) => 2차원
+        this.k = k;                                             // 3개로 나눈다면 k=3
+        this.centroids = tf.randomNormal([this.k, this.dim]);   // [K, 2]의 랜덤 중심점
+        this.xs = xs;                                           // [N, 2]의 입력 데이터
+        this.clusterAssignment;                                 // 할당된 군집의 정보
 
-        this.closestCentroids();
+        this.closestCentroids();                                // 2단계 실행
     }
 
     // 가장 가까운 군집으로 할당 (2단계)
     closestCentroids(){
-        const expandedXs = tf.expandDims(this.xs, 0);                   // 차원 통일 [N, 2] -> [1, N, 2]
-        const expandedCentroids = tf.expandDims(this.centroids, 1);     // 차원 통일 [K, 2] -> [K, 1, 2]
+        const expandedXs = tf.expandDims(this.xs, 0);                   // 차원 통일 [N, 2] -> [(K),  N , 2]
+        const expandedCentroids = tf.expandDims(this.centroids, 1);     // 차원 통일 [K, 2] -> [ K , (N), 2]
 
-        const d = expandedXs.sub(expandedCentroids).square().sum(2);    // 거리 계산 sum(2) -> 2의 주소가 x, y이므로
-
-        this.clusterAssignment = d.argMin(0);                           // [K, N, 2]에서 0번째(K) 중 최소값 인덱스 -> 군집 번호
-        return d.min(0).mean();                                         // 손실 함수의 결과값 (제곱 오차의 평균)
+        const d = expandedXs.sub(expandedCentroids).square().sum(2);    // 거리 계산 sum(2) -> 2의 주소가 x, y이므로 합 
+                                                                        // => [[거리1, 거리1, ..], [거리2, 거리2,...], [거리3, 거리3,...]]
+        this.clusterAssignment = d.argMin(0);                           // [K, N]에서 0번째(K) 중 거리 최소값을 가지는 인덱스 -> 군집 번호
+        return d.min(0).sum();                                          // 손실 함수의 결과값 (제곱 오차의 합)
     }
 
     // 군집 중심의 위치 갱신 (3단계)
@@ -91,12 +87,13 @@ class KMeans{
                     index.push(j);                                       // k번째 항목의 데이터 순서를 저장
                 }
             }
-
-            if(index.length == 0){ index.push(0) }                       // 분류되지 않은 경우 0번째 임의로 넣기
-
-            const cluster = tf.gather(this.xs, index);                   // k로 분류된 데이터만 추출
-            const center = cluster.mean(0);                              // x, y의 평균에 대해서 중심 재계산
-            centers.push(center);
+            if(index.length != 0){
+                const cluster = tf.gather(this.xs, index);               // k로 분류된 데이터만 추출
+                const center = cluster.mean(0);                          // x, y의 평균에 대해서 중심 재계산
+                centers.push(center);
+            }else{
+                centers.push(tf.tensor([0.5, 0.5]))                       // 중심이 안잡히는 경우 가운데 다시 설정
+            }
         }
         this.centroids = tf.concat(centers).reshape([this.k, this.dim]); // [K, 2]로 reshape
     }
@@ -111,17 +108,14 @@ class KMeans{
 // =================================================================
 //                          알고리즘 계산
 // =================================================================
-let model;
-let iter = [];
-let losses = [];
+loss_set = [];
 
 function run(){
-    model = new KMeans(xs, K);     // xs를 세개로 나누기
+    model = new KMeans(xs, K);
 
     for(let i=0; i<10; i++){
-        const loss = model.update();
-        iter.push(i);
-        losses.push(loss.dataSync()[0]);
+        const l = model.update();
+        loss_set.push({x: i, y: l.dataSync()[0]});
     }
 
     console.log( "원본 좌표: ")
@@ -129,89 +123,104 @@ function run(){
     console.log( "군집화 결과: ")
     console.log( model.clusterAssignment.dataSync() )
 
-    drawGraphs();
+    visualize();
 }
-
 
 // =================================================================
 //                          차트 그리는 파트
 // =================================================================
+// 실행 함수
+function visualize() {
+    // 시각화를 위한 데이터 세트
+    let original_data  = []        // 원본 데이터
+    let result_array   = []        // 분류한 결과
+    let result_label   = []
+    let result_array_o = []        // 원본 범위
 
-// 데이터 처리를 위한 함수
-function getXYfromTensor2D(t){
-    let array = t.dataSync();
-    let returnArray = [];
-    for(let i=0; i<array.length; i+=2){
-        returnArray.push({x: array[i], y: array[i+1]}) // 짝수: x값, 홀수: y값
-    }
-    return returnArray;
-} 
-
-function clustering(t, a, k){
-    let array = t.dataSync();
-    let assign = a.dataSync();
-
-    let returnClusters = [];
+    original_data = getXYfromTensor2D(xo)
 
     for(let i=0; i<K; i++){
-        let cluster = [];
-        for(let j=0; j<array.length; j+=2){
-            if(assign[j/2] == i){
-                cluster.push({x: array[j], y: array[j+1]});
-            }
-        }
-        returnClusters.push(cluster);
+        result_array[i] = getCluster(xs, model.clusterAssignment, K)[i]
+        result_label[i] = 'Cluster' + (i+1);
     }
 
-    return returnClusters;
-}
-
-function getDatasets(t, a, k){
-    let clusters = clustering(t, a, k);
-
-    let returnDatasets = [];
-    for(let i in clusters){
-        returnDatasets.push({label: 'Class ' + i, data: clusters[i]})
+    for(let i=0; i<K; i++){
+        result_array_o[i] = getCluster(xo, model.clusterAssignment, K)[i]
     }
 
-    return returnDatasets
+    // 그래프 출력
+    tfvis.visor().toggleFullScreen()
+
+    tfvis.render.scatterplot(
+        {name: '원본 데이터'},
+        {values: [original_data], series: ['Original']},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
+        }
+    )
+
+    tfvis.render.scatterplot(
+        {name: '분류 결과'},
+        {values: result_array, series: result_label},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
+        }
+    )
+
+    tfvis.render.scatterplot(
+        {name: '단위 재변환'},
+        {values: result_array_o, series: result_label},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
+        }
+    )
+
+    tfvis.render.linechart(
+        {name: '학습률'},
+        {values: loss_set},
+        {
+            xLabel: '반복',
+            yLabel: '손실값',
+            height: 400
+        }
+    )
 }
 
-function drawGraphs(){
-    // 입력 데이터 차트
-    const ctxData = document.getElementById('data');
-    new Chart(ctxData, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: '전체 데이터',
-                data: getXYfromTensor2D(xs),
-            }]
-        }
-    });
 
-    // 군집화 결과 차트
-    const ctxResult = document.getElementById('result');
-    new Chart(ctxResult, {
-        type: 'scatter',
-        data: {
-            datasets: getDatasets(model.xs, model.clusterAssignment, K)
-        }
-    });
 
-    // 손실 함수 차트
-    const ctxLoss = document.getElementById('loss');
-    new Chart(ctxLoss, {
-        type: 'line',
-        data: {
-            labels: iter,
-            datasets: [{
-                label: '손실 함수',
-                data: losses,
-            }]
-        }
-    });
-}
+// =================================================================
+//                          데이터 처리를 위한 함수
+// =================================================================
+function getXYfromTensor2D(_t){
+    let _array = _t.dataSync();
+    let _returnArray = [];
+    for(let i=0; i<_array.length; i+=2){
+        _returnArray.push({x: _array[i], y: _array[i+1]}) // 짝수: x값, 홀수: y값
+    }
+    return _returnArray;
+} 
+
+function getCluster(_t, _a, _k){
+    let _array = _t.dataSync();
+    let _assign = _a.dataSync();
+
+    let _returnClusters = [];
+    for(let i=0; i<_k; i++){
+        _returnClusters.push([])
+    }
+
+    for(let i in _assign){
+        _returnClusters[_assign[i]].push({x: _array[i*2], y: _array[i*2+1]})
+    }
+
+    return _returnClusters;
+} 
 
 </script>
 </html>

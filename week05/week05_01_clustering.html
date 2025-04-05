@@ -7,18 +7,9 @@
     <title>비지도학습 - 2차원 군집화</title>
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-vis@1.5.1/dist/tfjs-vis.umd.min.js"></script>
 </head>
 <body>
-    <!-- 데이터를 표시할 캔버스 -->
-    <canvas id="data"></canvas>
-
-    <!-- 분류 결과를 표시할 캔버스 -->
-    <canvas id="result"></canvas>
-
-    <!-- 손실 함수를 표시할 캔버스 -->
-    <canvas id="loss"></canvas>
 </body>
 
 <script>
@@ -35,10 +26,10 @@ const c3 = tf.randomNormal([N, 2]).add([-2.0, 2.0]);       // 평균 -2.0, 2.0
 // 입력 값으로 전체 데이터
 const xs = c1.concat(c2).concat(c3);
 
+
 // =================================================================
 //                          K-평균 알고리즘
 // =================================================================
-
 class KMeans{
     // k;                      // 원하는 군집의 수
     // dim;                    // 데이터 샘플의 차원
@@ -48,24 +39,24 @@ class KMeans{
 
     // 생성자: 입력 데이터와 군집 수로 초기화 (1단계)
     constructor(xs, k){
-        this.dim = xs.shape[1];                                 // x, y의 2차원이므로, dim=2
+        this.dim = 2;                                           // N개 항목에 대한 (X, Y) => 2차원
         this.k = k;                                             // 3개로 나눈다면 k=3
         this.centroids = tf.randomNormal([this.k, this.dim]);   // [K, 2]의 랜덤 중심점
         this.xs = xs;                                           // [N, 2]의 입력 데이터
         this.clusterAssignment;                                 // 할당된 군집의 정보
 
-        this.closestCentroids();
+        this.closestCentroids();                                // 2단계 실행
     }
 
     // 가장 가까운 군집으로 할당 (2단계)
     closestCentroids(){
-        const expandedXs = tf.expandDims(this.xs, 0);                   // 차원 통일 [N, 2] -> [1, N, 2]
-        const expandedCentroids = tf.expandDims(this.centroids, 1);     // 차원 통일 [K, 2] -> [K, 1, 2]
+        const expandedXs = tf.expandDims(this.xs, 0);                   // 차원 통일 [N, 2] -> [(K),  N , 2]
+        const expandedCentroids = tf.expandDims(this.centroids, 1);     // 차원 통일 [K, 2] -> [ K , (N), 2]
 
-        const d = expandedXs.sub(expandedCentroids).square().sum(2);    // 거리 계산 sum(2) -> 2의 주소가 x, y이므로
-
-        this.clusterAssignment = d.argMin(0);                           // [K, N, 2]에서 0번째(K) 중 최소값 인덱스 -> 군집 번호
-        return d.min(0).mean();                                         // 손실 함수의 결과값 (제곱 오차의 평균)
+        const d = expandedXs.sub(expandedCentroids).square().sum(2);    // 거리 계산 sum(2) -> 2의 주소가 x, y이므로 합 
+                                                                        // => [[거리1, 거리1, ..], [거리2, 거리2,...], [거리3, 거리3,...]]
+        this.clusterAssignment = d.argMin(0);                           // [K, N]에서 0번째(K) 중 거리 최소값을 가지는 인덱스 -> 군집 번호
+        return d.min(0).sum();                                          // 손실 함수의 결과값 (제곱 오차의 합)
     }
 
     // 군집 중심의 위치 갱신 (3단계)
@@ -102,12 +93,10 @@ class KMeans{
 const K = 3;
 const model = new KMeans(xs, K);     // xs를 세개로 나누기
 
-const iter = [];
-const losses = [];
+const loss_set = [];
 for(let i=0; i<10; i++){
-    const loss = model.update();
-    iter.push(i);
-    losses.push(loss.dataSync()[0]);
+    const l = model.update();
+    loss_set.push({x: i, y: l.dataSync()[0]});
 }
 
 console.log( "원본 좌표: ")
@@ -115,93 +104,91 @@ console.log( getXYfromTensor2D(model.xs) )
 console.log( "군집화 결과: ")
 console.log( model.clusterAssignment.dataSync() )
 
+visualize();
+
 // =================================================================
 //                          차트 그리는 파트
 // =================================================================
+// 실행 함수
+function visualize() {
+    // 시각화를 위한 데이터 세트
+    let original_data = []        // 원본 데이터
+    let result_array  = []        // 분류한 결과
+    let result_label  = []
 
-// 데이터 처리를 위한 함수
-function getXYfromTensor2D(t){
-    let array = t.dataSync();
-    let returnArray = [];
-    for(let i=0; i<array.length; i+=2){
-        returnArray.push({x: array[i], y: array[i+1]}) // 짝수: x값, 홀수: y값
-    }
-    return returnArray;
-} 
-
-function clustering(t, a, k){
-    let array = t.dataSync();
-    let assign = a.dataSync();
-
-    let returnClusters = [];
+    original_data = getXYfromTensor2D(xs)
 
     for(let i=0; i<K; i++){
-        let cluster = [];
-        for(let j=0; j<array.length; j+=2){
-            if(assign[j/2] == i){
-                cluster.push({x: array[j], y: array[j+1]});
-            }
-        }
-        returnClusters.push(cluster);
+        result_array[i] = getCluster(xs, model.clusterAssignment, K)[i]
+        result_label[i] = 'Cluster' + i;
     }
 
-    return returnClusters;
+    console.log(result_array)
+    console.log(result_label)
+
+    // 그래프 출력
+    tfvis.visor().toggleFullScreen()
+
+    tfvis.render.scatterplot(
+        {name: '원본 데이터'},
+        {values: [original_data], series: ['Original']},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
+        }
+    )
+
+    tfvis.render.scatterplot(
+        {name: '분류 결과'},
+        {values: result_array, series: result_label},
+        {
+            xLabel: 'x',
+            yLabel: 'y',
+            height: 400
+        }
+    )
+
+    tfvis.render.linechart(
+        {name: '학습률'},
+        {values: loss_set},
+        {
+            xLabel: '반복',
+            yLabel: '손실값',
+            height: 400
+        }
+    )
+}
+
+
+
+// =================================================================
+//                          데이터 처리를 위한 함수
+// =================================================================
+function getXYfromTensor2D(_t){
+    let _array = _t.dataSync();
+    let _returnArray = [];
+    for(let i=0; i<_array.length; i+=2){
+        _returnArray.push({x: _array[i], y: _array[i+1]}) // 짝수: x값, 홀수: y값
+    }
+    return _returnArray;
 } 
 
-// 입력 데이터 차트
-const ctxData = document.getElementById('data');
-new Chart(ctxData, {
-    type: 'scatter',
-    data: {
-        datasets: [{
-            label: 'Class 1',
-            data: getXYfromTensor2D(c1),
-        },
-        {
-            label: 'Class 2',
-            data: getXYfromTensor2D(c2),
-        },
-        {
-            label: 'Class 3',
-            data: getXYfromTensor2D(c3),
-        }
-        ]
-    }
-});
+function getCluster(_t, _a, _k){
+    let _array = _t.dataSync();
+    let _assign = _a.dataSync();
 
-// 군집화 결과 차트
-const ctxResult = document.getElementById('result');
-new Chart(ctxResult, {
-    type: 'scatter',
-    data: {
-        datasets: [{
-            label: 'Class 1',
-            data: clustering(model.xs, model.clusterAssignment, K)[0],
-        },
-        {
-            label: 'Class 2',
-            data: clustering(model.xs, model.clusterAssignment, K)[1],
-        },
-        {
-            label: 'Class 3',
-            data: clustering(model.xs, model.clusterAssignment, K)[2],
-        }
-        ]
+    let _returnClusters = [];
+    for(let i=0; i<_k; i++){
+        _returnClusters.push([])
     }
-});
 
-// 손실 함수 차트
-const ctxLoss = document.getElementById('loss');
-new Chart(ctxLoss, {
-    type: 'line',
-    data: {
-        labels: iter,
-        datasets: [{
-            label: '손실 함수',
-            data: losses,
-        }]
+    for(let i in _assign){
+        _returnClusters[_assign[i]].push({x: _array[i*2], y: _array[i*2+1]})
     }
-});
+
+    return _returnClusters;
+} 
 
 </script>
 </html>
