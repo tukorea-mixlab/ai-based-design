@@ -20,6 +20,7 @@
 |week06|week06_02_cos.html|데이터전처리 - 순차 데이터 분석 - 코사인 함수 분석|
 |week06|week06_03_complex_cos.html|데이터전처리 - 순차 데이터 분석 - 복합 코사인 함수 분석|
 |week06|week06_04_ifft.html|데이터전처리 - 순차 데이터 분석 - IFFT|
-|week06|week06_05_word2vec.js|데이터전처리 - 임베딩 - Webi용 데이터 가져오기|
-|week06|week06_05_word2vec_vector.tsv|데이터전처리 - 임베딩 - 벡터 파일 예시|
-|week06|week06_05_word2vec_meta.tsv|데이터전처리 - 임베딩 - 메타데이터 파일 예시|
+|week06|week06_05_drawing_fft.html|데이터전처리 - 순차 데이터 분석 - 커서 좌표로 FFT 분석|
+|week06|week06_06_word2vec_webi |데이터전처리 - 임베딩 - 학습 과정 시각화|
+|week06|week06_06_word2vec_vector.tsv|데이터전처리 - 임베딩 - 벡터 파일 예시|
+|week06|week06_07_word2vec_meta.tsv|데이터전처리 - 임베딩 - 메타데이터 파일 예시|

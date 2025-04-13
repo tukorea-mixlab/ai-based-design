@@ -1,0 +1,149 @@
+<!-- 인공지능활용디자인 6주차 - 순차 데이터 분석 - 드로잉 데이터 분석 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>순차 데이터 분석 - 드로잉 데이터</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@2.0.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/addons/p5.sound.min.js"></script>
+
+</head>
+<body style="max-width: 1000px;">
+    <main>
+    </main>
+    <!-- 데이터를 표시할 캔버스 -->
+    <canvas id="data"></canvas>
+
+    <!-- FFT 결과를 표시할 캔버스 -->
+    <canvas id="result"></canvas>
+    <canvas id="resultFreq"></canvas>
+</body>
+
+
+<script>
+let xData = [];
+let yData = [];
+let timeStarted = 0;
+let timeCounted = 0;
+
+let xs;
+let ys;
+let norm;
+let freq;
+let dominentFreq = 0;
+
+function setup(){
+    createCanvas(640, 640);
+    background(240);
+}
+function draw(){
+    if(timeStarted==0) return false;
+
+    xData.push(millis() - timeStarted)
+    yData.push(mouseY)
+
+    if(yData.length>1){
+        line(xData[xData.length-1]/10, yData[yData.length-1], xData[xData.length-2]/10, yData[yData.length-2]);
+        circle(xData[xData.length-1]/10, yData[yData.length-1], 5);
+    }
+}
+function mousePressed(){
+    background(240);
+    xData = []
+    yData = [];
+    timeStarted = millis();
+}
+function mouseReleased(){
+    xs = tf.tensor(xData);
+    ys = tf.tensor(yData);
+    ys = ys.sub(ys.mean()) // 평균을 빼준 것
+
+    // 시간 측정
+    timeCounted = (millis() - timeStarted)/1000;
+    let fs = yData.length/timeCounted;
+
+    // 정보 출력
+    text('측정 시간: ' + timeCounted.toFixed() + '초', 50, 50);
+    text('측정 샘플: ' + yData.length + '개', 50, 70);
+    text('초당 샘플 수(fs): ' + fs.toFixed(2) + '개/초', 50, 90);
+
+    freq = fs/yData.length;
+
+    // FFT 입력에는 복소수가 필요
+    const input = tf.complex(ys, ys.zerosLike());
+
+    // FFT 실행
+    const transformed = tf.fft(input);
+
+    const real = tf.real(transformed);
+    const imag = tf.imag(transformed);
+
+    // 최종 벡터의 크기 - sqrt( a^2 + b^2) 
+    norm = tf.sqrt(real.square().add(imag.square()));
+
+    let result = getFFTfromTensorFreq(norm, freq)
+    let maxValue = 0;
+    let maxIndex = 0;
+    for(let i=0; i<result.length/2; i++){
+        if(result[i].y > maxValue){
+            maxValue = result[i].y;
+            maxIndex = i;
+        }
+    }
+
+    dominentFreq = parseFloat(result[maxIndex].x);
+
+    text('가장 높은 주파수: ' + dominentFreq.toFixed(2) + 'Hz', 50, 110);
+
+    visualize();
+
+    timeStarted = 0;
+}
+
+// 데이터 처리를 위한 함수
+function getFFTfromTensor(t){
+    let array = t.dataSync();
+    let returnArray = [];
+    for(let i=0; i<array.length; i++){
+        returnArray.push({x: String(i), y: array[i]});
+    }
+    return returnArray;
+} 
+
+function getFFTfromTensorFreq(t, f){
+    let array = t.dataSync();
+    let returnArray = [];
+    for(let i=0; i<array.length; i++){
+        returnArray.push({x: String((i*f).toFixed(2)), y: array[i]});
+    }
+    return returnArray;
+} 
+
+let ctxResult = document.getElementById('result');
+let ctxResultFreq = document.getElementById('resultFreq');
+let myChart;
+
+function visualize(){
+    // 결과 차트 (Freq)
+    if(myChart != null) myChart.destroy();
+
+    myChart = new Chart(ctxResultFreq, {
+        type: 'bar',
+        data: {
+            datasets: [{
+                label: 'FFT 실행 결과 (Freq 반영)',
+                data: getFFTfromTensorFreq(norm, freq),
+            }]
+        }
+    });
+}
+
+
+</script>
+</html>
+
