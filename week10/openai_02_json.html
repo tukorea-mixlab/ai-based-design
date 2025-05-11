@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT & DALL-E 요리 레시피 생성기</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 1%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #title {
+            margin-bottom: 48px;
+        }
+
+        .btn{
+            border: none;
+            border-radius: 8px;
+            padding: 12px 32px;
+        }
+
+        .btn:hover {
+            filter: brightness(80%);
+        }
+
+        .wrap {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100vw;
+            height: 70vh;
+        }
+
+        .box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            width: 512px;
+            height: 100%;
+            padding: 1%;
+        }
+
+        #recipe {
+            line-height: 28px;
+            width: 420px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        #ingredients_text {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="title">요리 레시피 생성기</h1>
+    <div class="wrap">
+        <div class="recipe_wrap box">
+            <button id="generateRecipeBtn" class="btn">레시피 생성하기</button>
+            <div id="recipe">
+                <h2 id="name_text"></h2>
+                <h3 id="name_eng_text"></h3>
+                <p id="ingredients_text"></p>
+                <h5 id="process_text"></h5>
+            </div>
+        </div>
+    
+    
+        <div class="image_wrap box">
+            <button id="generateImageBtn" class="btn">이미지 생성하기</button>
+            <img id="recipeImage" src="" alt="">
+        </div>
+
+    </div>
+
+    <script>
+
+const APIkey = prompt("API Key");
+
+// ChatGPT API 호출: 레시피 생성
+async function generateText() {
+    try {
+        const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${APIkey}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    { role: 'system', content: '너는 숙련된 요리사야. 야채 손질부터 조리까지 간단하고 맛있는 요리법을 친절하게 설명해줘.' },
+                    { role: 'user',
+                    content:`파스타 요리법을 JSON 형식으로만 제공해줘. 결과는 반드시 다음 형식이어야 해:
+                    {
+                        "name": "파스타 이름",
+                        "nameeng": "파스타 이름을 영어로 번역한 이름",
+                        "ingredients": "재료명과 무게를 여러 개의 항목을 만들지 말고 나열",
+                        "process": "조리 과정"
+                    }
+                    JSON 외의 다른 문자는 포함하지 마.`}
+                ]
+            })
+        });
+
+        const gptData = await gptResponse.json();
+        const recipe = gptData.choices[0].message.content; 
+        const recipeJson = JSON.parse(recipe); //json 형식으로 파싱
+
+        // HTML에 json데이터 연결
+        document.getElementById('name_text').innerText = recipeJson.name;
+        document.getElementById('name_eng_text').innerText = recipeJson.nameeng;
+        document.getElementById('ingredients_text').innerText = recipeJson.ingredients;
+        document.getElementById('process_text').innerText = recipeJson.process;
+
+    } catch (error) {
+        console.error('레시피 생성 오류:', error);
+    }
+}
+
+// DALL-E API 호출: 이미지 생성
+async function generateImage() {
+    try {
+        const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${APIkey}`
+            },
+            body: JSON.stringify({
+                prompt: document.getElementById('name_eng_text').innerText,
+                n: 1,
+                size: '512x512'
+            })
+        });
+
+        const dalleData = await dalleResponse.json();
+        const imageUrl = dalleData.data[0].url;
+        document.getElementById('recipeImage').src = imageUrl;
+    } catch (error) {
+        console.error('이미지 생성 오류:', error);
+    }
+}
+
+// 각 버튼 이벤트 리스너 설정
+document.getElementById('generateRecipeBtn').addEventListener('click', generateText);
+document.getElementById('generateImageBtn').addEventListener('click', generateImage);
+    </script>
+</body>
+</html>
